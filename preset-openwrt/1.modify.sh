@@ -33,5 +33,5 @@ cp $(dirname $0)/../bg.jpg package/base-files/files/www/luci-static/argon/backgr
 # Install Custom IPK
 # Install Custom IPK
 mkdir -p package/base-files/files/tmp
-cp $(dirname $0)/../my-app.ipk package/base-files/files/tmp/
-echo "opkg install /tmp/my-app.ipk" >> package/base-files/files/etc/rc.local
+cp $(dirname $0)/../luci-app-vlanwizard_1.0_all.ipk package/base-files/files/tmp/
+echo "opkg install /tmp/luci-app-vlanwizard_1.0_all.ipk" >> package/base-files/files/etc/rc.local

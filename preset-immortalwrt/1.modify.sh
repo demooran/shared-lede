@@ -13,10 +13,9 @@ sed -i 's/OpenWrt/PRO-MAX/g' package/base-files/files/bin/config_generate
 mkdir -p package/base-files/files/www/luci-static/argon/background
 cp $(dirname $0)/../bg.jpg package/base-files/files/www/luci-static/argon/background/background.jpg
 
-# Install Custom IPK
-mkdir -p package/base-files/files/tmp
-cp $(dirname $0)/../luci-app-vlanwizard_1.0_all.ipk package/base-files/files/tmp/
-echo "opkg install /tmp/luci-app-vlanwizard_1.0_all.ipk" >> package/base-files/files/etc/rc.local
+# Include Custom Package from Source
+mkdir -p package/custom-packages
+cp -r $(dirname $0)/../luci-app-vlanwizard package/custom-packages/
 
 # Change SSH Port to 7642
 sed -i 's/^#\?Port.*/Port 7642/g' package/network/services/dropbear/files/dropbear.config

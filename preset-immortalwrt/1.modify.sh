@@ -6,8 +6,12 @@
 # replace geodata source
 . $(dirname $0)/../extra-files/update-geodata.sh
 
-# Change Hostname to PRO-MAX
-sed -i 's/OpenWrt/PRO-MAX/g' package/base-files/files/bin/config_generate
+# Change Hostname and SSID via UCI
+uci set system.@system[0].hostname= PRO-MAX 
+uci set wireless.default_radio0.ssid= PRO-MAX 
+uci set wireless.default_radio1.ssid= PRO-MAX 
+uci commit system
+uci commit wireless
 
 # Add Argon Background
 mkdir -p package/base-files/files/www/luci-static/argon/background

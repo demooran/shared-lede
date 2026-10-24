@@ -7,9 +7,9 @@
 . $(dirname $0)/../extra-files/update-geodata.sh
 
 # Change Hostname and SSID via UCI
-uci set system.@system[0].hostname= PRO-MAX 
-uci set wireless.default_radio0.ssid= PRO-MAX 
-uci set wireless.default_radio1.ssid= PRO-MAX 
+uci set system.@system[0].hostname='PRO-MAX' 
+uci set wireless.default_radio0.ssid='PRO-MAX' 
+uci set wireless.default_radio1.ssid='PRO-MAX' 
 uci commit system
 uci commit wireless
 

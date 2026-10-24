@@ -21,8 +21,6 @@ cp $(dirname $0)/../bg.jpg package/base-files/files/www/luci-static/argon/backgr
 mkdir -p package/custom-packages
 cp -r $(dirname $0)/../luci-app-vlanwizard package/custom-packages/
 
-# Change SSH Port to 7642
-sed -i 's/^#\?Port.*/Port 7642/g' package/network/services/dropbear/files/dropbear.config
 
 # 1. إخفاء صفحة النسخ الاحتياطي (Backup / Flash Firmware)
 rm -f package/feeds/luci/luci-mod-system/htdocs/luci-static/resources/view/system/backup.js

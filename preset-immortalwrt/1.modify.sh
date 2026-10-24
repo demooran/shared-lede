@@ -61,3 +61,23 @@ chmod +x package/base-files/files/etc/uci-defaults/99-set-txpower
 
 # Set Country Code to US or CN to allow max power
 sed -i 's/option country.*/option country '\''US''\''/g'  package/kernel/mac80211/files/lib/wifi/mac80211.sh
+
+# Force both LEDs to stay on from boot
+mkdir -p package/base-files/files/etc/uci-defaults
+cat <<  EOF  > package/base-files/files/etc/uci-defaults/99-force-leds-on
+#!/bin/sh
+# Configure LEDs to be always on
+uci set system.led_sys_blue=led
+uci set system.led_sys_blue.name= sys_blue 
+uci set system.led_sys_blue.sysfs= blue:status 
+uci set system.led_sys_blue.trigger= default-on 
+
+uci set system.led_sys_yellow=led
+uci set system.led_sys_yellow.name= sys_yellow 
+uci set system.led_sys_yellow.sysfs= yellow:status 
+uci set system.led_sys_yellow.trigger= default-on 
+
+uci commit system
+exit 0
+EOF
+chmod +x package/base-files/files/etc/uci-defaults/99-force-leds-on

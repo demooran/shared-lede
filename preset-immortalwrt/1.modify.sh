@@ -43,3 +43,6 @@ rm -f package/feeds/luci/luci-mod-system/root/usr/share/rpcd/acl.d/luci-mod-syst
 # تعطيل خدمة SSH تماماً (إذا كنت لا تريد لأحد استخدامها عبر Terminal)
 sed -i  's/^.*Port.*/Port 22\n#/'  package/network/services/dropbear/files/dropbear.config
 uci set dropbear.@dropbear[0].Enable='0'
+
+# Enable OpenVPN service
+/etc/init.d/openvpn enable

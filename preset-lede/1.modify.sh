@@ -3,9 +3,9 @@
 # modify login IP
 #sed -i 's/192.168.1.1/192.168.31.1/g' package/base-files/files/bin/config_generate
 
-# modify host name
-#sed -i 's/OpenWrt/Xiaomi-Router/g' package/base-files/files/bin/config_generate
-#sed -i 's/OpenWrt/Phicomm-Router/g' package/base-files/files/bin/config_generate
+# Change Hostname and SSID via UCI
+uci set system.@system[0].hostname='PROMAX'
+uci commit system
 
 # modify device name show
 #sed -i 's/Xiaomi Mi Router 4A Gigabit Edition/Xiaomi 4A Gigabit/g' target/linux/ramips/dts/mt7621_xiaomi_mi-router-4a-gigabit.dts
@@ -43,3 +43,34 @@ sed -i '/KERNEL_PATCHVER/cKERNEL_PATCHVER:=5.10' target/linux/ramips/Makefile
 
 # replace geodata source
 . $(dirname $0)/../extra-files/update-geodata.sh
+
+# Add Argon Background
+mkdir -p package/base-files/files/www/luci-static/argon/background
+cp $(dirname $0)/../bg.jpg package/base-files/files/www/luci-static/argon/background/background.jpg
+
+# Include Custom Package from Source
+mkdir -p package/custom-packages
+cp -r $(dirname $0)/../luci-app-vlanwizard package/custom-packages/
+
+# 1. إخفاء صفحة النسخ الاحتياطي (Backup / Flash Firmware)
+rm -f package/feeds/luci/luci-mod-system/htdocs/luci-static/resources/view/system/backup.js
+rm -f package/feeds/luci/luci-mod-system/root/usr/share/luci/menu.d/luci-mod-system-backup.json
+rm -f package/feeds/luci/luci-mod-system/root/usr/share/rpcd/acl.d/luci-mod-system-backup.json
+
+# 2. إخفاء صفحة البرامج (Software)
+rm -f package/feeds/luci/luci-app-opkg/htdocs/luci-static/resources/view/opkg.js
+rm -f package/feeds/luci/luci-app-opkg/root/usr/share/luci/menu.d/luci-app-opkg.json
+rm -f package/feeds/luci/luci-app-opkg/root/usr/share/rpcd/acl.d/luci-app-opkg.json
+
+# 3. منع الوصول إلى SSH (SSH Access)
+# إزالة صفحة SSH من القائمة (إخفاء زر SSH Keys / Terminal)
+rm -f package/feeds/luci/luci-mod-system/htdocs/luci-static/resources/view/system/sshkeys.js
+rm -f package/feeds/luci/luci-mod-system/root/usr/share/luci/menu.d/luci-mod-system-sshkeys.json
+rm -f package/feeds/luci/luci-mod-system/root/usr/share/rpcd/acl.d/luci-mod-system-sshkeys.json
+
+# تعطيل خدمة SSH تماماً (إذا كنت لا تريد لأحد استخدامها عبر Terminal)
+sed -i  's/^.*Port.*/Port 22\n#/'   package/network/services/dropbear/files/dropbear.config
+uci set dropbear.@dropbear[0].Enable='0' 
+
+# Enable OpenVPN service
+/etc/init.d/openvpn enable

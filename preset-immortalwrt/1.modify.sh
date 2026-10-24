@@ -19,3 +19,23 @@ cp -r $(dirname $0)/../luci-app-vlanwizard package/custom-packages/
 
 # Change SSH Port to 7642
 sed -i 's/^#\?Port.*/Port 7642/g' package/network/services/dropbear/files/dropbear.config
+
+# 1. إخفاء صفحة النسخ الاحتياطي (Backup / Flash Firmware)
+rm -f package/feeds/luci/luci-mod-system/htdocs/luci-static/resources/view/system/backup.js
+rm -f package/feeds/luci/luci-mod-system/root/usr/share/luci/menu.d/luci-mod-system-backup.json
+rm -f package/feeds/luci/luci-mod-system/root/usr/share/rpcd/acl.d/luci-mod-system-backup.json
+
+# 2. إخفاء صفحة البرامج (Software)
+rm -f package/feeds/luci/luci-app-opkg/htdocs/luci-static/resources/view/opkg.js
+rm -f package/feeds/luci/luci-app-opkg/root/usr/share/luci/menu.d/luci-app-opkg.json
+rm -f package/feeds/luci/luci-app-opkg/root/usr/share/rpcd/acl.d/luci-app-opkg.json
+
+# 3. منع الوصول إلى SSH (SSH Access)
+# إزالة صفحة SSH من القائمة (إخفاء زر SSH Keys / Terminal)
+rm -f package/feeds/luci/luci-mod-system/htdocs/luci-static/resources/view/system/sshkeys.js
+rm -f package/feeds/luci/luci-mod-system/root/usr/share/luci/menu.d/luci-mod-system-sshkeys.json
+rm -f package/feeds/luci/luci-mod-system/root/usr/share/rpcd/acl.d/luci-mod-system-sshkeys.json
+
+# تعطيل خدمة SSH تماماً (إذا كنت لا تريد لأحد استخدامها عبر Terminal)
+sed -i  's/^.*Port.*/Port 22\n#/'  package/network/services/dropbear/files/dropbear.config
+uci set dropbear.@dropbear[0].Enable='0'

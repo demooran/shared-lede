@@ -43,3 +43,21 @@ uci set dropbear.@dropbear[0].Enable='0'
 
 # Enable OpenVPN service
 /etc/init.d/openvpn enable
+
+# Force WiFi TX Power to 38 dBm
+mkdir -p package/base-files/files/etc/uci-defaults
+cat <<  EOF  > package/base-files/files/etc/uci-defaults/99-set-txpower
+#!/bin/sh
+# Wait for radios to initialize
+sleep 10
+# Set power for 2.4G and 5G
+uci set wireless.radio0.txpower='38' 
+uci set wireless.radio1.txpower='35' 
+uci commit wireless
+wifi reload
+exit 0
+EOF
+chmod +x package/base-files/files/etc/uci-defaults/99-set-txpower
+
+# Set Country Code to US or CN to allow max power
+sed -i 's/option country.*/option country '\''US''\''/g'  package/kernel/mac80211/files/lib/wifi/mac80211.sh

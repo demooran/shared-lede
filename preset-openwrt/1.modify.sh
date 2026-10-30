@@ -43,15 +43,15 @@ cat <<  EOF  > package/base-files/files/etc/uci-defaults/99-set-ap-mode
 #!/bin/sh
 
 # 1. Disable DHCP Server on LAN
-uci set dhcp.lan.ignore= 1 
+uci set dhcp.lan.ignore='1'
 
 # 2. Disable Dynamic DHCP (Advanced Settings)
-uci set dhcp.lan.dynamicdhcp= 0 
+uci set dhcp.lan.dynamicdhcp='0'
 
 # 3. Disable IPv6 RA and DHCPv6 Services
-uci set dhcp.lan.ra= disabled 
-uci set dhcp.lan.dhcpv6= disabled 
-uci set dhcp.lan.ndp= disabled 
+uci set dhcp.lan.ra='disabled'
+uci set dhcp.lan.dhcpv6='disabled'
+uci set dhcp.lan.ndp='disabled'
 
 # Save changes
 uci commit dhcp

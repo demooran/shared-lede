@@ -22,21 +22,27 @@ if [ -f "$(dirname $0)/../bg.jpg" ]; then
 fi
 
 # ==========================================
-# 4. إعدادات الواي فاي الافتراضية (SSID)
+# 4. إعدادات الواي فاي الافتراضية (SSID & Country Code)
 # ==========================================
 WIFI_FILE="package/kernel/mac80211/files/lib/wifi/mac80211.sh"
 if [ -f "$WIFI_FILE" ]; then
+    # تفعيل الواي فاي وتغيير الاسم
     sed -i 's/disabled=1/disabled=0/g' "$WIFI_FILE"
     sed -i 's/ssid=OpenWrt/ssid=PROMAX/g' "$WIFI_FILE"
     sed -i 's/ssid=ImmortalWrt/ssid=PROMAX/g' "$WIFI_FILE"
+    # تغيير الدولة إلى بنما (PA)
+    sed -i "s/country=.*/country=PA/g" "$WIFI_FILE"
 fi
 
 # ==========================================
-# 5. دمج إضافة vlanwizard في النظام (Built-in)
+# 5. تثبيت إضافة vlanwizard عبر ملف IPK
 # ==========================================
-# نسخ كود الإضافة من المستودع إلى مجلد الحزم ليقوم النظام ببنائها
-if [ -d "$GITHUB_WORKSPACE/luci-app-vlanwizard" ]; then
-    cp -r $GITHUB_WORKSPACE/luci-app-vlanwizard package/
+# نسخ ملف الحزمة إلى مجلد /tmp داخل النظام
+mkdir -p package/base-files/files/tmp
+if [ -f "$GITHUB_WORKSPACE/luci-app-vlanwizard_1.0_all.ipk" ]; then
+    cp $GITHUB_WORKSPACE/luci-app-vlanwizard_1.0_all.ipk package/base-files/files/tmp/
+    # إضافة أمر التثبيت إلى rc.local ليعمل عند أول إقلاع
+    echo "opkg install /tmp/luci-app-vlanwizard_1.0_all.ipk" >> package/base-files/files/etc/rc.local
 fi
 
 # ==========================================

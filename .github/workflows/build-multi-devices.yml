@@ -1,15 +1,6 @@
-#
-# Copyright (C) 2022-2024 hugcabbage <fengsongtianxia@gmail.com>
-#
-# This is free software, licensed under the MIT License.
-#
-# <https://github.com/hugcabbage/shared-lede>
-#
 name: build multi devices
 
 on:
-#  schedule:
-#    - cron: 0 22 * * 5
   workflow_dispatch:
     inputs:
       branch:
@@ -17,10 +8,10 @@ on:
         required: true
         type: choice
         options:
-          - 'openwrt-24.10'
-          - 'openwrt-23.05'
-          - 'openwrt-22.03'
-          - 'master'
+          - openwrt-24.10
+          - openwrt-23.05
+          - openwrt-22.03
+          - master
       latest_tag:
         description: 'switch to the latest stable version (none in master)'
         required: false
@@ -64,11 +55,10 @@ jobs:
       fail-fast: false
       matrix:
         multi_config:
-          - 'multi-common.config'
-          - 'multi-mini.config'
-          - 'multi-tiny.config'
+          - multi-common.config
+          - multi-mini.config
+          - multi-tiny.config
     steps:
-
       - name: Hide sensitive inputs
         if: github.event_name == 'workflow_dispatch'
         uses: hugcabbage/action-hide-sensitive-inputs@v1
@@ -76,8 +66,7 @@ jobs:
           include_inputs: login_pwd
 
       - name: Display initial disk space
-        run: |
-          df -h
+        run: df -h
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -120,6 +109,17 @@ jobs:
           ./scripts/feeds update -a
           ./scripts/feeds install -a
 
+      # ==========================================
+      # الخطوة المضافة لنسخ الإضافة (vlanwizard)
+      # ==========================================
+      - name: Copy custom package (vlanwizard)
+        run: |
+          if [ -d "${{ env.EXTRA_STR }}/luci-app-vlanwizard" ]; then
+            cp -r ${{ env.EXTRA_STR }}/luci-app-vlanwizard package/
+          elif [ -d "luci-app-vlanwizard" ]; then
+            cp -r luci-app-vlanwizard package/
+          fi
+
       - name: Modify configuration
         env:
           MODIFY_SH: ${{ steps.prepare-deployment.outputs.modify_sh }}
@@ -132,6 +132,10 @@ jobs:
           DOT_CONFIG: ${{ steps.prepare-deployment.outputs.dot_config }}
         run: |
           mv $DOT_CONFIG .config
+          
+          # إضافة سطر الإضافة (vlanwizard) إلى ملف التكوين قبل البناء
+          echo "CONFIG_PACKAGE_luci-app-vlanwizard=y" >> .config
+          
           make defconfig
 
       - name: Make download

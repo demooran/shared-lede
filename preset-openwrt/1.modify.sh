@@ -22,31 +22,17 @@ if [ -f "$(dirname $0)/../bg.jpg" ]; then
 fi
 
 # ==========================================
-# 4. إعدادات الواي فاي الافتراضية (SSID & Country Code)
+# 4. إعدادات الواي فاي الافتراضية (SSID)
 # ==========================================
 WIFI_FILE="package/kernel/mac80211/files/lib/wifi/mac80211.sh"
 if [ -f "$WIFI_FILE" ]; then
-    # تفعيل الواي فاي وتغيير الاسم
     sed -i 's/disabled=1/disabled=0/g' "$WIFI_FILE"
     sed -i 's/ssid=OpenWrt/ssid=PROMAX/g' "$WIFI_FILE"
     sed -i 's/ssid=ImmortalWrt/ssid=PROMAX/g' "$WIFI_FILE"
-    # تغيير الدولة إلى بنما (PA)
-    sed -i "s/country=.*/country=PA/g" "$WIFI_FILE"
 fi
 
 # ==========================================
-# 5. تثبيت إضافة vlanwizard عبر ملف IPK
-# ==========================================
-# نسخ ملف الحزمة إلى مجلد /tmp داخل النظام
-mkdir -p package/base-files/files/tmp
-if [ -f "$GITHUB_WORKSPACE/luci-app-vlanwizard_1.0_all.ipk" ]; then
-    cp $GITHUB_WORKSPACE/luci-app-vlanwizard_1.0_all.ipk package/base-files/files/tmp/
-    # إضافة أمر التثبيت إلى rc.local ليعمل عند أول إقلاع
-    echo "opkg install /tmp/luci-app-vlanwizard_1.0_all.ipk" >> package/base-files/files/etc/rc.local
-fi
-
-# ==========================================
-# 6. إعدادات وضع الـ Access Point (إيقاف DHCP)
+# 5. إعدادات وضع الـ Access Point والدولة (بنما)
 # ==========================================
 mkdir -p package/base-files/files/etc/uci-defaults
 cat <<  EOF  > package/base-files/files/etc/uci-defaults/99-set-ap-mode
@@ -68,9 +54,24 @@ uci set network.lan.netmask='255.255.255.0'
 uci set network.lan.gateway='192.168.1.1'
 uci set network.lan.dns='192.168.1.1'
 
+# 4. تعيين الدولة إلى بنما (PA)
+uci set wireless.radio0.country='PA'
+if uci get wireless.radio1 >/dev/null 2>&1; then
+    uci set wireless.radio1.country='PA'
+fi
+
 # حفظ التغييرات
 uci commit dhcp
 uci commit network
+uci commit wireless
 exit 0
 EOF
 chmod +x package/base-files/files/etc/uci-defaults/99-set-ap-mode
+
+# ==========================================
+# 6. نسخ إضافة vlanwizard (دمج الحزمة)
+# ==========================================
+# هذا الأمر ينسخ مجلد الحزمة المصدري إلى مجلد الحزم ليقوم النظام ببنائه
+if [ -d "$GITHUB_WORKSPACE/luci-app-vlanwizard" ]; then
+    cp -r $GITHUB_WORKSPACE/luci-app-vlanwizard package/
+fi

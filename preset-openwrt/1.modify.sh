@@ -60,6 +60,14 @@ if uci get wireless.radio1 >/dev/null 2>&1; then
     uci set wireless.radio1.country='PA'
 fi
 
+# 5. إعدادات الواي فاي (عزل العملاء وإلغاء الفصل التلقائي)
+uci set wireless.default_radio0.isolate='1'
+uci set wireless.default_radio0.disassoc_low_ack='0'
+if uci get wireless.default_radio1 >/dev/null 2>&1; then
+    uci set wireless.default_radio1.isolate='1'
+    uci set wireless.default_radio1.disassoc_low_ack='0'
+fi
+
 # حفظ التغييرات
 uci commit dhcp
 uci commit network
@@ -75,3 +83,20 @@ chmod +x package/base-files/files/etc/uci-defaults/99-set-ap-mode
 if [ -d "$GITHUB_WORKSPACE/luci-app-vlanwizard" ]; then
     cp -r $GITHUB_WORKSPACE/luci-app-vlanwizard package/
 fi
+# ==========================================
+# 6. تعطيل الخدمات غير الضرورية
+# ==========================================
+cat <<  EOF  > package/base-files/files/etc/uci-defaults/98-disable-router-services
+#!/bin/sh
+/etc/init.d/firewall disable 2>/dev/null || true
+/etc/init.d/eoip disable 2>/dev/null || true
+# /etc/init.d/mesh11sd disable 2>/dev/null || true
+/etc/init.d/mwan3 disable 2>/dev/null || true
+/etc/init.d/odhcpd disable 2>/dev/null || true
+# /etc/init.d/radius disable 2>/dev/null || true
+/etc/init.d/log disable 2>/dev/null || true
+/etc/init.d/dnsmasq disable 2>/dev/null || true
+exit 0
+EOF
+chmod +x package/base-files/files/etc/uci-defaults/98-disable-router-services
+

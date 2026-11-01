@@ -77,6 +77,17 @@ EOF
 chmod +x package/base-files/files/etc/uci-defaults/99-set-ap-mode
 
 # ==========================================
+# 7. حقن قيم طاقة اللاسلكي الوهمية حتى 40 dBm في السورس
+# ==========================================
+WIRELESS_JS=$(find . -path "*/luci-app-wireless/htdocs/luci-static/resources/view/network/wireless.js" -o -path "*/luci-mod-network/htdocs/luci-static/resources/view/network/wireless.js" 2>/dev/null | head -n 1)
+
+if [ -n "$WIRELESS_JS" ] && [ -f "$WIRELESS_JS" ]; then
+    # إضافة القيم الوهمية إلى مصفوفة الطاقة في ملف الـ JavaScript الخاص بالواجهة
+    sed -i '/callTXPowerlist/a \            for(let i=27; i<=40; i++) pwrlist.push({dbm: i, mw: Math.round(Math.pow(10, (i-30)/10) * 1000)});\
+            pwrlist = pwrlist.filter((v,i,a)=>a.findIndex(t=>(t.dbm===v.dbm))===i);' "$WIRELESS_JS"
+fi
+
+# ==========================================
 # 6. نسخ إضافة vlanwizard (دمج الحزمة)
 # ==========================================
 # هذا الأمر ينسخ مجلد الحزمة المصدري إلى مجلد الحزم ليقوم النظام ببنائه

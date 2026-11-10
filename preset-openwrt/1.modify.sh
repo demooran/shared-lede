@@ -89,10 +89,10 @@ if [ -n "$WIRELESS_JS" ] && [ -f "$WIRELESS_JS" ]; then
 fi
 
 # ==========================================
-# 8. نسخ إضافة vlanwizard (دمج الحزمة)
+# 8. نسخ إضافة luci-app-quicksetup (دمج الحزمة)
 # ==========================================
-if [ -d "$GITHUB_WORKSPACE/luci-app-vlanwizard" ]; then
-    cp -r "$GITHUB_WORKSPACE/luci-app-vlanwizard" package/
+if [ -d "$GITHUB_WORKSPACE/luci-app-quicksetup" ]; then
+    cp -r "$GITHUB_WORKSPACE/luci-app-quicksetup" package/
 fi
 
 # ==========================================

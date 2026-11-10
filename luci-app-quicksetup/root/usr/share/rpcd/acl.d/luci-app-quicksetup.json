@@ -1,0 +1,17 @@
+{
+"luci-app-quicksetup": {
+"description": "Grant UCI and file access for Quicksetup",
+"read": {
+"uci": [ "wizard", "network", "wireless" ],
+"file": {
+"/etc/init.d/wizard": [ "read" ]
+}
+},
+"write": {
+"uci": [ "wizard", "network", "wireless" ],
+"file": {
+"/etc/init.d/wizard": [ "exec" ]
+}
+}
+}
+}

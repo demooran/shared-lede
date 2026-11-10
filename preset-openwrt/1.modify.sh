@@ -70,15 +70,24 @@ if uci get wireless.default_radio1 >/dev/null 2>&1; then
     uci set wireless.default_radio1.disassoc_low_ack='0'
 fi
 
+# 7. تعيين اسم الشبكة (SSID) وكلمة المرور (لضمان التغيير)
+uci set wireless.default_radio0.ssid='PROMAX'
+uci set wireless.default_radio0.encryption='none'
+if uci get wireless.default_radio1 >/dev/null 2>&1; then
+    uci set wireless.default_radio1.ssid='PROMAX'
+    uci set wireless.default_radio1.encryption='none'
+fi
+# ملاحظة: إذا أردت إضافة كلمة مرور، أضف السطرين التاليين:
+# uci set wireless.default_radio0.encryption='psk2'
+# uci set wireless.default_radio0.key='YourPassword'
+
 # حفظ التغييرات
 uci commit dhcp
 uci commit network
 uci commit wireless
 exit 0
 EOF
-chmod +x package/base-files/files/etc/uci-defaults/99-set-ap-mode
-
-# ==========================================
+chmod +x package/base-files/files/etc/uci-defaults/99-set-ap-mode# ==========================================
 # 7. حقن قيم طاقة اللاسلكي الوهمية حتى 40 dBm في السورس
 # ==========================================
 WIRELESS_JS=$(find . -path "*/luci-app-wireless/htdocs/luci-static/resources/view/network/wireless.js" -o -path "*/luci-mod-network/htdocs/luci-static/resources/view/network/wireless.js" 2>/dev/null | head -n 1)

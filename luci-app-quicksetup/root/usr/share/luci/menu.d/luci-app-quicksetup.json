@@ -1,0 +1,14 @@
+{
+"admin/quicksetup": {
+"title": "Quicksetup",
+"order": 1,
+"action": {
+"type": "view",
+"path": "quicksetup/final_check"
+},
+"depends": {
+"acl": [ "luci-app-quicksetup" ],
+"uci": { "wizard": true }
+}
+}
+}

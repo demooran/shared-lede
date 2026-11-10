@@ -1,0 +1,13 @@
+
+config wizard 'default'
+	option MKSettings 'APMVL'
+	option IPADD '10.0.0.101'
+	option SSID2G 'Ran101'
+	option MESHID '773502651'
+	option CH2G 'auto'
+	option CH5G '48'
+	option WKEYTYPE 'none'
+	option wifi_flag_Vlan '1'
+	option VLANID '101'
+	option CHWidte 'auto'
+

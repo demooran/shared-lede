@@ -32,54 +32,43 @@ if [ -f "$WIFI_FILE" ]; then
 fi
 
 # ==========================================
-# 5. إعدادات وضع الـ Access Point والدولة (بنما) وحذف WAN
+# 5. إعدادات وضع الـ Access Point والدولة (بنما)
 # ==========================================
 mkdir -p package/base-files/files/etc/uci-defaults
-cat << 'EOF' > package/base-files/files/etc/uci-defaults/99-set-ap-mode
+cat <<  EOF  > package/base-files/files/etc/uci-defaults/99-set-ap-mode
 #!/bin/sh
 
 # 1. حذف واجهات الـ WAN تماماً وإبقاء LAN فقط
 uci delete network.wan 2>/dev/null || true
 uci delete network.wan6 2>/dev/null || true
 
-# 2. تعطيل خدمة DHCP على واجهة LAN
+# 1. تعطيل خدمة DHCP على واجهة LAN
 uci set dhcp.lan.ignore='1'
 uci set dhcp.lan.dynamicdhcp='0'
 
-# 3. تعطيل خدمات IPv6
+# 2. تعطيل خدمات IPv6
 uci set dhcp.lan.ra='disabled'
 uci set dhcp.lan.dhcpv6='disabled'
 uci set dhcp.lan.ndp='disabled'
 
-# 4. تعيين عنوان IP ثابت للجهاز (بوابة الراوتر الرئيسي)
+# 3. تعيين عنوان IP ثابت للجهاز (بوابة الراوتر الرئيسي)
 uci set network.lan.proto='static'
 uci set network.lan.ipaddr='192.168.1.21'
 uci set network.lan.netmask='255.255.255.0'
 
-# 5. تعيين الدولة إلى بنما (PA)
+# 4. تعيين الدولة إلى بنما (PA)
 uci set wireless.radio0.country='PA'
 if uci get wireless.radio1 >/dev/null 2>&1; then
     uci set wireless.radio1.country='PA'
 fi
 
-# 6. إعدادات الواي فاي (عزل العملاء وإلغاء الفصل التلقائي)
+# 5. إعدادات الواي فاي (عزل العملاء وإلغاء الفصل التلقائي)
 uci set wireless.default_radio0.isolate='1'
 uci set wireless.default_radio0.disassoc_low_ack='0'
 if uci get wireless.default_radio1 >/dev/null 2>&1; then
     uci set wireless.default_radio1.isolate='1'
     uci set wireless.default_radio1.disassoc_low_ack='0'
 fi
-
-# 7. تعيين اسم الشبكة (SSID) وكلمة المرور (لضمان التغيير)
-uci set wireless.default_radio0.ssid='PROMAX'
-uci set wireless.default_radio0.encryption='none'
-if uci get wireless.default_radio1 >/dev/null 2>&1; then
-    uci set wireless.default_radio1.ssid='PROMAX'
-    uci set wireless.default_radio1.encryption='none'
-fi
-# ملاحظة: إذا أردت إضافة كلمة مرور، أضف السطرين التاليين:
-# uci set wireless.default_radio0.encryption='psk2'
-# uci set wireless.default_radio0.key='YourPassword'
 
 # حفظ التغييرات
 uci commit dhcp
@@ -88,6 +77,14 @@ uci commit wireless
 exit 0
 EOF
 chmod +x package/base-files/files/etc/uci-defaults/99-set-ap-mode
+
+# ==========================================
+# 6. نسخ إضافة vlanwizard (دمج الحزمة)
+# ==========================================
+# هذا الأمر ينسخ مجلد الحزمة المصدري إلى مجلد الحزم ليقوم النظام ببنائه
+if [ -d "$GITHUB_WORKSPACE/luci-app-quicksetup" ]; then
+    cp -r $GITHUB_WORKSPACE/luci-app-quicksetup package/
+fi
 
 # ==========================================
 # 7. حقن قيم طاقة اللاسلكي الوهمية حتى 40 dBm
@@ -99,18 +96,10 @@ if [ -n "$WIRELESS_JS" ] && [ -f "$WIRELESS_JS" ]; then
     # استخدام sed لاستبدال السطر الأصلي (الذي نجحنا فيه في التيرمنال)
     sed -i "s|for(let p of pwrlist)|for(let i=27; i<=40; i++) { pwrlist.push({dbm: i, mw: Math.round(Math.pow(10, (i-30)/10) * 1000)}); }; pwrlist = pwrlist.filter((v,i,a)=>a.findIndex(t=>(t.dbm===v.dbm))===i); for(let p of pwrlist)|g" "$WIRELESS_JS"
 fi
-
 # ==========================================
-# 8. نسخ إضافة luci-app-quicksetup (دمج الحزمة)
+# 6. تعطيل الخدمات غير الضرورية
 # ==========================================
-if [ -d "$GITHUB_WORKSPACE/luci-app-quicksetup" ]; then
-    cp -r "$GITHUB_WORKSPACE/luci-app-quicksetup" package/
-fi
-
-# ==========================================
-# 9. تعطيل الخدمات غير الضرورية
-# ==========================================
-cat << 'EOF' > package/base-files/files/etc/uci-defaults/98-disable-router-services
+cat <<  EOF  > package/base-files/files/etc/uci-defaults/98-disable-router-services
 #!/bin/sh
 /etc/init.d/firewall disable 2>/dev/null || true
 /etc/init.d/eoip disable 2>/dev/null || true
@@ -123,3 +112,4 @@ cat << 'EOF' > package/base-files/files/etc/uci-defaults/98-disable-router-servi
 exit 0
 EOF
 chmod +x package/base-files/files/etc/uci-defaults/98-disable-router-services
+

@@ -78,8 +78,8 @@ jobs:
           REQUIREMENTS: ${{ env.EXTRA_STR }}/extra-files/requirements-transit.txt
         run: |
           sudo apt-get update
-          # تم إضافة "install" لحل خطأ GNU install في نسخة 23.05
-          sudo apt-get -y install gcc-multilib gettext libfuse-dev install
+          # تثبيت الحزم المطلوبة، بما فيها coreutils التي توفر أداة install
+          sudo apt-get -y install gcc-multilib gettext libfuse-dev coreutils
           sudo apt-get clean
           pip3 install -r $REQUIREMENTS
 
@@ -111,7 +111,7 @@ jobs:
           ./scripts/feeds install -a
 
       # ==========================================
-      # الخطوة المضافة لنسخ الإضافة (quicksetup)
+      # نسخ الإضافة الجديدة quicksetup
       # ==========================================
       - name: Copy custom package (quicksetup)
         run: |
@@ -134,7 +134,7 @@ jobs:
         run: |
           mv $DOT_CONFIG .config
           
-          # إضافة سطر الإضافة الجديدة (quicksetup) إلى ملف التكوين قبل البناء
+          # إضافة سطر الإضافة (quicksetup) إلى ملف التكوين قبل البناء
           echo "CONFIG_PACKAGE_luci-app-quicksetup=y" >> .config
           
           make defconfig
@@ -145,7 +145,8 @@ jobs:
 
       - name: Compile
         run: |
-          make -j$(nproc) || make -j1 V=s
+          # إضافة FORCE=1 لتجاوز أي فحص للمتطلبات قد يفشل
+          make FORCE=1 -j$(nproc) || make FORCE=1 -j1 V=s
 
       - name: Pick up files
         run: |

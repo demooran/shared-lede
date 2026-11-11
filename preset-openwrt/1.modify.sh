@@ -18,7 +18,7 @@ fi
 # ==========================================
 mkdir -p package/base-files/files/www/luci-static/argon/background
 if [ -f "$(dirname $0)/../bg.jpg" ]; then
-    cp $(dirname $0)/../bg.jpg package/base-files/files/www/luci-static/argon/background/background.jpg
+    cp "$(dirname $0)/../bg.jpg" package/base-files/files/www/luci-static/argon/background/background.jpg
 fi
 
 # ==========================================
@@ -35,39 +35,47 @@ fi
 # 5. إعدادات وضع الـ Access Point والدولة (بنما)
 # ==========================================
 mkdir -p package/base-files/files/etc/uci-defaults
-cat <<  EOF  > package/base-files/files/etc/uci-defaults/99-set-ap-mode
+cat << 'EOF' > package/base-files/files/etc/uci-defaults/99-set-ap-mode
 #!/bin/sh
 
 # 1. حذف واجهات الـ WAN تماماً وإبقاء LAN فقط
 uci delete network.wan 2>/dev/null || true
 uci delete network.wan6 2>/dev/null || true
 
-# 1. تعطيل خدمة DHCP على واجهة LAN
+# 2. تعطيل خدمة DHCP على واجهة LAN
 uci set dhcp.lan.ignore='1'
 uci set dhcp.lan.dynamicdhcp='0'
 
-# 2. تعطيل خدمات IPv6
+# 3. تعطيل خدمات IPv6
 uci set dhcp.lan.ra='disabled'
 uci set dhcp.lan.dhcpv6='disabled'
 uci set dhcp.lan.ndp='disabled'
 
-# 3. تعيين عنوان IP ثابت للجهاز (بوابة الراوتر الرئيسي)
+# 4. تعيين عنوان IP ثابت للجهاز (بوابة الراوتر الرئيسي)
 uci set network.lan.proto='static'
 uci set network.lan.ipaddr='192.168.1.21'
 uci set network.lan.netmask='255.255.255.0'
 
-# 4. تعيين الدولة إلى بنما (PA)
+# 5. تعيين الدولة إلى بنما (PA)
 uci set wireless.radio0.country='PA'
 if uci get wireless.radio1 >/dev/null 2>&1; then
     uci set wireless.radio1.country='PA'
 fi
 
-# 5. إعدادات الواي فاي (عزل العملاء وإلغاء الفصل التلقائي)
+# 6. إعدادات الواي فاي (عزل العملاء وإلغاء الفصل التلقائي)
 uci set wireless.default_radio0.isolate='1'
 uci set wireless.default_radio0.disassoc_low_ack='0'
 if uci get wireless.default_radio1 >/dev/null 2>&1; then
     uci set wireless.default_radio1.isolate='1'
     uci set wireless.default_radio1.disassoc_low_ack='0'
+fi
+
+# 7. تعيين اسم الشبكة (SSID) وكلمة المرور
+uci set wireless.default_radio0.ssid='PROMAX'
+uci set wireless.default_radio0.encryption='none'
+if uci get wireless.default_radio1 >/dev/null 2>&1; then
+    uci set wireless.default_radio1.ssid='PROMAX'
+    uci set wireless.default_radio1.encryption='none'
 fi
 
 # حفظ التغييرات
@@ -79,27 +87,43 @@ EOF
 chmod +x package/base-files/files/etc/uci-defaults/99-set-ap-mode
 
 # ==========================================
-# 6. نسخ إضافة vlanwizard (دمج الحزمة)
+# 6. نسخ إضافة luci-app-quicksetup (دمج الحزمة)
 # ==========================================
-# هذا الأمر ينسخ مجلد الحزمة المصدري إلى مجلد الحزم ليقوم النظام ببنائه
 if [ -d "$GITHUB_WORKSPACE/luci-app-quicksetup" ]; then
-    cp -r $GITHUB_WORKSPACE/luci-app-quicksetup package/
+    echo "جاري نسخ إضافة luci-app-quicksetup..."
+    cp -r "$GITHUB_WORKSPACE/luci-app-quicksetup" package/
+else
+    echo "خطأ: لم يتم العثور على مجلد luci-app-quicksetup!"
 fi
 
 # ==========================================
 # 7. حقن قيم طاقة اللاسلكي الوهمية حتى 40 dBm
 # ==========================================
-# البحث عن ملف wireless.js في المسارات المحتملة
-WIRELESS_JS=$(find package/ -name "wireless.js" -path "*network*" | head -n 1)
+WIRELESS_JS=$(find . -name "wireless.js" -path "*network*" 2>/dev/null | head -n 1)
 
 if [ -n "$WIRELESS_JS" ] && [ -f "$WIRELESS_JS" ]; then
-    # استخدام sed لاستبدال السطر الأصلي (الذي نجحنا فيه في التيرمنال)
-    sed -i "s|for(let p of pwrlist)|for(let i=27; i<=40; i++) { pwrlist.push({dbm: i, mw: Math.round(Math.pow(10, (i-30)/10) * 1000)}); }; pwrlist = pwrlist.filter((v,i,a)=>a.findIndex(t=>(t.dbm===v.dbm))===i); for(let p of pwrlist)|g" "$WIRELESS_JS"
+    echo "تم العثور على wireless.js في: $WIRELESS_JS"
+    
+    # محاولة الحقن للإصدارات الحديثة (for...of)
+    if grep -q "for(let p of pwrlist)" "$WIRELESS_JS"; then
+        sed -i "s|for(let p of pwrlist)|for(let i=27; i<=40; i++) { pwrlist.push({dbm: i, mw: Math.round(Math.pow(10, (i-30)/10) * 1000)}); }; pwrlist = pwrlist.filter((v,i,a)=>a.findIndex(t=>(t.dbm===v.dbm))===i); for(let p of pwrlist)|g" "$WIRELESS_JS"
+        echo "✅ تم حقن القيم للإصدار الحديث."
+    
+    # الحقن للإصدارات القديمة (for(var i=...))
+    elif grep -q "for(var i=0;i<pwrlist.length;i++)" "$WIRELESS_JS"; then
+        sed -i "s|for(var i=0;i<pwrlist.length;i++)|for(let j=27; j<=40; j++) { pwrlist.push({dbm: j, mw: Math.round(Math.pow(10, (j-30)/10) * 1000)}); }; pwrlist = pwrlist.filter((v,i,a)=>a.findIndex(t=>(t.dbm===v.dbm))===i); for(var i=0;i<pwrlist.length;i++)|g" "$WIRELESS_JS"
+        echo "✅ تم حقن القيم للإصدار القديم."
+    else
+        echo "⚠️ لم يتم العثور على النمط المناسب لحقن القيم."
+    fi
+else
+    echo "⚠️ لم يتم العثور على ملف wireless.js."
 fi
+
 # ==========================================
-# 6. تعطيل الخدمات غير الضرورية
+# 8. تعطيل الخدمات غير الضرورية
 # ==========================================
-cat <<  EOF  > package/base-files/files/etc/uci-defaults/98-disable-router-services
+cat << 'EOF' > package/base-files/files/etc/uci-defaults/98-disable-router-services
 #!/bin/sh
 /etc/init.d/firewall disable 2>/dev/null || true
 /etc/init.d/eoip disable 2>/dev/null || true
@@ -112,4 +136,3 @@ cat <<  EOF  > package/base-files/files/etc/uci-defaults/98-disable-router-servi
 exit 0
 EOF
 chmod +x package/base-files/files/etc/uci-defaults/98-disable-router-services
-

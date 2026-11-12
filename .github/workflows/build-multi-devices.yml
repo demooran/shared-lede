@@ -78,7 +78,7 @@ jobs:
           REQUIREMENTS: ${{ env.EXTRA_STR }}/extra-files/requirements-transit.txt
         run: |
           sudo apt-get update
-          # تثبيت الحزم المطلوبة، بما فيها coreutils التي توفر أداة install
+          # coreutils موجودة لكن قد تكون نسخة uutils في Ubuntu 24.04
           sudo apt-get -y install gcc-multilib gettext libfuse-dev coreutils
           sudo apt-get clean
           pip3 install -r $REQUIREMENTS
@@ -141,11 +141,12 @@ jobs:
 
       - name: Make download
         run: |
-          make download -j8 || make download -j1 V=s
+          # تجاوز فحص المتطلبات هنا أيضاً
+          make FORCE=1 download -j8 || make FORCE=1 download -j1 V=s
 
       - name: Compile
         run: |
-          # إضافة FORCE=1 لتجاوز أي فحص للمتطلبات قد يفشل
+          # تجاوز فحص GNU install الذي يفشل على Ubuntu 24.04
           make FORCE=1 -j$(nproc) || make FORCE=1 -j1 V=s
 
       - name: Pick up files

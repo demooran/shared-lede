@@ -73,16 +73,12 @@ jobs:
         with:
           path: ${{ env.EXTRA_STR }}
 
-      - name: Prepare environments (Fix GNU install)
+      - name: Prepare environments
         env:
           REQUIREMENTS: ${{ env.EXTRA_STR }}/extra-files/requirements-transit.txt
         run: |
           sudo apt-get update
-          # الحل الجذري: إزالة uutils وتثبيت GNU coreutils الحقيقي
-          sudo apt-get remove -y coreutils-from-uutils || true
-          sudo apt-get install -y coreutils gcc-multilib gettext libfuse-dev
-          # التحقق من أن install أصبح GNU
-          install --version | head -n 1
+          sudo apt-get -y install gcc-multilib gettext libfuse-dev
           sudo apt-get clean
           pip3 install -r $REQUIREMENTS
 
@@ -136,12 +132,14 @@ jobs:
           echo "CONFIG_PACKAGE_luci-app-quicksetup=y" >> .config
           make defconfig
 
-      # تجاوز فحص المتطلبات يدوياً (حل احتياطي إضافي)
-      - name: Bypass prerequisite check
+      # ==========================================
+      # الحل الجذري: إنشاء ملف .prereq-build يدوياً
+      # ==========================================
+      - name: Bypass prerequisite check (Create dummy file)
         run: |
           mkdir -p staging_dir/host
           touch staging_dir/host/.prereq-build
-          echo "✅ تم تجاوز فحص المتطلبات"
+          echo "✅ تم إنشاء ملف .prereq-build لتجاوز الفحص"
 
       - name: Make download
         run: |

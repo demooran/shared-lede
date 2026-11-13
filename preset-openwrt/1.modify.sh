@@ -35,26 +35,26 @@ uci set dhcp.lan.dhcpv6=disabled
 uci set dhcp.lan.ndp=disabled
 
 # 4. تعيين عنوان IP ثابت للجهاز (بدون Gateway)
-uci set network.lan.proto=static
-uci set network.lan.ipaddr=192.168.1.21
-uci set network.lan.netmask=255.255.255.0
+uci set network.lan.proto='static'
+uci set network.lan.ipaddr='192.168.1.21'
+uci set network.lan.netmask='255.255.255.0'
 uci delete network.lan.gateway 2>/dev/null || true
 
 # 5. تعيين إعدادات الواي فاي (عزل العملاء وإلغاء الفصل التلقائي)
-uci set wireless.default_radio0.isolate=1
-uci set wireless.default_radio0.disassoc_low_ack=0
+uci set wireless.default_radio0.isolate='1'
+uci set wireless.default_radio0.disassoc_low_ack='0'
 if uci get wireless.default_radio1 >/dev/null 2>&1; then
-    uci set wireless.default_radio1.isolate=1
-    uci set wireless.default_radio1.disassoc_low_ack=0
+    uci set wireless.default_radio1.isolate='1'
+    uci set wireless.default_radio1.disassoc_low_ack='0'
 fi
 
 # 6. تعيين اسم الشبكة (SSID) وكلمة المرور (بدون كلمة مرور)
-uci set wireless.default_radio0.ssid=promax
-uci set wireless.default_radio0.encryption=none
+uci set wireless.default_radio0.ssid='promax'
+uci set wireless.default_radio0.encryption='none'
 
 if uci get wireless.default_radio1 >/dev/null 2>&1; then
-    uci set wireless.default_radio1.ssid=promax_5G
-    uci set wireless.default_radio1.encryption=none
+    uci set wireless.default_radio1.ssid='promax_5G'
+    uci set wireless.default_radio1.encryption='none'
 fi
 
 # حفظ التغييرات
@@ -79,8 +79,8 @@ fi
 cat << 'EOF' > package/base-files/files/etc/uci-defaults/98-argon-theme
 #!/bin/sh
 uci set luci.main.mediaurlbase='/luci-static/argon'
-uci set argon.@global[0].bing_background=0
-uci set argon.@global[0].mode=normal
+uci set argon.@global[0].bing_background='0'
+uci set argon.@global[0].mode='normal'
 uci commit luci
 uci commit argon
 exit 0
@@ -88,7 +88,7 @@ EOF
 chmod +x package/base-files/files/etc/uci-defaults/98-argon-theme
 
 # ==========================================
-# 5. حقن قيم طاقة اللاسلكي الوهمية حتى 40 dBm
+# 5. حقن ورفع سقف القيم في واجهة LuCI لتشمل 36 dBm (وهمية/عرض فقط)
 # ==========================================
 WIRELESS_JS=$(find . -name "wireless.js" -path "*network*" 2>/dev/null | head -n 1)
 
@@ -96,11 +96,11 @@ if [ -n "$WIRELESS_JS" ] && [ -f "$WIRELESS_JS" ]; then
     echo "تم العثور على wireless.js في: $WIRELESS_JS"
     
     if grep -q "for(let p of pwrlist)" "$WIRELESS_JS"; then
-        sed -i "s|for(let p of pwrlist)|for(let i=27; i<=40; i++) { pwrlist.push({dbm: i, mw: Math.round(Math.pow(10, (i-30)/10) * 1000)}); }; pwrlist = pwrlist.filter((v,i,a)=>a.findIndex(t=>(t.dbm===v.dbm))===i); for(let p of pwrlist)|g" "$WIRELESS_JS"
-        echo "✅ تم حقن القيم للإصدار الحديث."
+        sed -i "s|for(let p of pwrlist)|for(let i=27; i<=36; i++) { pwrlist.push({dbm: i, mw: Math.round(Math.pow(10, (i-30)/10) * 1000)}); }; pwrlist = pwrlist.filter((v,i,a)=>a.findIndex(t=>(t.dbm===v.dbm))===i); for(let p of pwrlist)|g" "$WIRELESS_JS"
+        echo "✅ تم حقن القيم حتى 36 dBm للإصدار الحديث."
     elif grep -q "for(var i=0;i<pwrlist.length;i++)" "$WIRELESS_JS"; then
-        sed -i "s|for(var i=0;i<pwrlist.length;i++)|for(let j=27; j<=40; j++) { pwrlist.push({dbm: j, mw: Math.round(Math.pow(10, (j-30)/10) * 1000)}); }; pwrlist = pwrlist.filter((v,i,a)=>a.findIndex(t=>(t.dbm===v.dbm))===i); for(var i=0;i<pwrlist.length;i++)|g" "$WIRELESS_JS"
-        echo "✅ تم حقن القيم للإصدار القديم."
+        sed -i "s|for(var i=0;i<pwrlist.length;i++)|for(let j=27; j<=36; j++) { pwrlist.push({dbm: j, mw: Math.round(Math.pow(10, (j-30)/10) * 1000)}); }; pwrlist = pwrlist.filter((v,i,a)=>a.findIndex(t=>(t.dbm===v.dbm))===i); for(var i=0;i<pwrlist.length;i++)|g" "$WIRELESS_JS"
+        echo "✅ تم حقن القيم حتى 36 dBm للإصدار القديم."
     else
         echo "⚠️ لم يتم العثور على النمط المناسب لحقن القيم."
     fi
@@ -134,17 +134,19 @@ if [ -f "feeds/luci/collections/luci/Makefile" ]; then
 fi
 
 # ==========================================
-# 8. تفعيل الواي فاي الإجباري وضبط قوة الإرسال (30 dBm)
+# 8. تعيين طاقة الإرسال على 36 dBm وإلغاء قيود الدولة ('US')
 # ==========================================
 cat << 'EOF' > package/base-files/files/etc/uci-defaults/99-fix-wifi-power
 #!/bin/sh
-uci set wireless.radio0.disabled=0
-uci set wireless.radio1.disabled=0
-uci set wireless.radio0.txpower=30
-uci set wireless.radio1.txpower=30
-uci delete wireless.radio0.country 2>/dev/null || true
-uci delete wireless.radio1.country 2>/dev/null || true
-uci commit wireless
+uci -q batch << EOB
+set wireless.@wifi-device[0].disabled='0'
+set wireless.@wifi-device[1].disabled='0'
+set wireless.@wifi-device[0].country='US'
+set wireless.@wifi-device[1].country='US'
+set wireless.@wifi-device[0].txpower='36'
+set wireless.@wifi-device[1].txpower='36'
+commit wireless
+EOB
 wifi reload
 exit 0
 EOF

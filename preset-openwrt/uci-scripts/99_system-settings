@@ -1,12 +1,15 @@
 uci -q batch << EOF
 
-set luci.main.lang=zh_cn
+# 1. ضبط اللغة الافتراضية لتكون الإنجليزية (بدلاً من الصينية)
+set luci.main.lang=en
 set luci.main.mediaurlbase=/luci-static/argon
 commit luci
 
-set argon.@global[0].bing_background='1'
+# 2. ضبط إعدادات ثيم أرجون (تعطيل خلفية بينغ لضمان ظهور الخلفية المطلوبة بثبات)
+set argon.@global[0].bing_background=0
 commit argon
 
+# 3. إعدادات المنطقة الزمنية (يمكنك تركها أو تعديلها حسب رغبتك)
 set system.@system[0].timezone=CST-8
 set system.@system[0].zonename=Asia/Shanghai
 commit system

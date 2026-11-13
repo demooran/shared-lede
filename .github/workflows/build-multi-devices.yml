@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       branch:
-        description: select version
+        description: 'select version'
         required: true
         type: choice
         options:
@@ -13,31 +13,31 @@ on:
           - openwrt-22.03
           - master
       latest_tag:
-        description: switch to the latest stable version (none in master)
+        description: 'switch to the latest stable version (none in master)'
         required: false
         type: boolean
       lan_ipad:
-        description: set LAN port IP address (will override settings in modify script)
+        description: 'set LAN port IP address (will override settings in modify script)'
         required: false
-        default: ""
+        default: ''
         type: string
       login_pwd:
-        description: set initial login password (will override settings in modify script)
+        description: 'set initial login password (will override settings in modify script)'
         required: false
-        default: ""
+        default: ''
         type: string
       record:
-        description: input version description
+        description: 'input version description'
         required: false
-        default: "details: kernel bumped, application version updated"
+        default: 'details: kernel bumped, application version updated'
         type: string
       release:
-        description: upload firmware to release
+        description: 'upload firmware to release'
         required: false
         default: true
         type: boolean
       artifact:
-        description: upload firmware to artifact
+        description: 'upload firmware to artifact'
         required: false
         default: false
         type: boolean
@@ -73,20 +73,12 @@ jobs:
         with:
           path: ${{ env.EXTRA_STR }}
 
-      # ==========================================
-      # الحل الجذري لمشكلة GNU install
-      # ==========================================
-      - name: Prepare environments (Force GNU coreutils)
+      - name: Prepare environments
         env:
           REQUIREMENTS: ${{ env.EXTRA_STR }}/extra-files/requirements-transit.txt
         run: |
           sudo apt-get update
-          # إزالة uutils وتثبيت GNU coreutils الحقيقي
-          sudo apt-get remove -y coreutils-from-uutils --allow-remove-essential || true
-          sudo apt-get install -y coreutils gcc-multilib gettext libfuse-dev
-          # التحقق من نجاح التثبيت (يجب أن يظهر GNU)
-          echo "Checking install version..."
-          install --version | head -n 1
+          sudo apt-get -y install gcc-multilib gettext libfuse-dev
           sudo apt-get clean
           pip3 install -r $REQUIREMENTS
 
@@ -117,7 +109,10 @@ jobs:
           ./scripts/feeds update -a
           ./scripts/feeds install -a
 
-      - name: Copy custom package (quicksetup)
+      # ==========================================
+      # الخطوة المضافة لنسخ الإضافة (vlanwizard)
+      # ==========================================
+      - name: Copy custom package (vlanwizard)
         run: |
           if [ -d "${{ env.EXTRA_STR }}/luci-app-quicksetup" ]; then
             cp -r ${{ env.EXTRA_STR }}/luci-app-quicksetup package/
@@ -137,7 +132,10 @@ jobs:
           DOT_CONFIG: ${{ steps.prepare-deployment.outputs.dot_config }}
         run: |
           mv $DOT_CONFIG .config
+          
+          # إضافة سطر الإضافة (vlanwizard) إلى ملف التكوين قبل البناء
           echo "CONFIG_PACKAGE_luci-app-quicksetup=y" >> .config
+          
           make defconfig
 
       - name: Make download
@@ -179,7 +177,7 @@ jobs:
 
       - name: Upload firmware to release
         id: to-release
-        if: steps.calculate-version.conclusion == 'success' && (inputs.release || github.event_name != 'workflow_dispatch')
+        if: steps.calculate-version.conclusion == 'success' && inputs.release || github.event_name != 'workflow_dispatch'
         continue-on-error: true
         uses: svenstaro/upload-release-action@v2
         with:

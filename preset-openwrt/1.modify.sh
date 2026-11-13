@@ -66,14 +66,26 @@ EOF
 chmod +x package/base-files/files/etc/uci-defaults/99-set-ap-mode
 
 # ==========================================
-# 4. نسخ إضافة luci-app-quicksetup (دمج الحزمة)
+# 4. دمج خلفية الثيم المخصصة (bg.img) وتفعيل ثيم Argon
 # ==========================================
-if [ -d "$GITHUB_WORKSPACE/luci-app-quicksetup" ]; then
-    echo "جاري نسخ إضافة luci-app-quicksetup..."
-    cp -r "$GITHUB_WORKSPACE/luci-app-quicksetup" package/
+mkdir -p package/base-files/files/www/luci-static/argon/background/
+if [ -f "$GITHUB_WORKSPACE/bg.img" ]; then
+    cp "$GITHUB_WORKSPACE/bg.img" package/base-files/files/www/luci-static/argon/background/bg.jpg
+    echo "✅ تم نسخ خلفية الثيم بنجاح."
 else
-    echo "خطأ: لم يتم العثور على مجلد luci-app-quicksetup!"
+    echo "⚠️ تحذير: لم يتم العثور على ملف bg.img في جذر المشروع."
 fi
+
+cat << 'EOF' > package/base-files/files/etc/uci-defaults/98-argon-theme
+#!/bin/sh
+uci set luci.main.mediaurlbase='/luci-static/argon'
+uci set argon.@global[0].bing_background=0
+uci set argon.@global[0].mode=normal
+uci commit luci
+uci commit argon
+exit 0
+EOF
+chmod +x package/base-files/files/etc/uci-defaults/98-argon-theme
 
 # ==========================================
 # 5. حقن قيم طاقة اللاسلكي الوهمية حتى 40 dBm
@@ -107,11 +119,6 @@ cat << 'EOF' > package/base-files/files/etc/uci-defaults/98-disable-router-servi
 /etc/init.d/odhcpd disable 2>/dev/null || true
 /etc/init.d/log disable 2>/dev/null || true
 /etc/init.d/dnsmasq disable 2>/dev/null || true
-
-# تعيين ثيم Argon كافتراضي للنظام تلقائياً أول ما يشتغل الجهاز
-uci set luci.main.mediaurlbase='/luci-static/argon'
-uci commit luci
-
 exit 0
 EOF
 chmod +x package/base-files/files/etc/uci-defaults/98-disable-router-services

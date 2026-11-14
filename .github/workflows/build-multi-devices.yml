@@ -114,10 +114,10 @@ jobs:
       # ==========================================
       - name: Copy custom package (vlanwizard)
         run: |
-          if [ -d "${{ env.EXTRA_STR }}/luci-app-quicksetup" ]; then
-            cp -r ${{ env.EXTRA_STR }}/luci-app-quicksetup package/
-          elif [ -d "luci-app-quicksetup" ]; then
-            cp -r luci-app-quicksetup package/
+          if [ -d "${{ env.EXTRA_STR }}/luci-app-vlanwizard" ]; then
+            cp -r ${{ env.EXTRA_STR }}/luci-app-vlanwizard package/
+          elif [ -d "luci-app-vlanwizard" ]; then
+            cp -r luci-app-vlanwizard package/
           fi
 
       - name: Modify configuration

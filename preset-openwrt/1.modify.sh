@@ -88,24 +88,25 @@ EOF
 chmod +x package/base-files/files/etc/uci-defaults/98-argon-theme
 
 # ==========================================
-# 5. حقن ورفع سقف القيم في واجهة LuCI لتشمل 36 dBm (وهمية/عرض فقط)
+# 5. تعديل wireless.js (dBm + Status)
 # ==========================================
 WIRELESS_JS=$(find . -name "wireless.js" -path "*network*" 2>/dev/null | head -n 1)
 
 if [ -n "$WIRELESS_JS" ] && [ -f "$WIRELESS_JS" ]; then
     echo "تم العثور على wireless.js في: $WIRELESS_JS"
-    
-    if grep -q "for(let p of pwrlist)" "$WIRELESS_JS"; then
-        sed -i "s|for(let p of pwrlist)|for(let i=27; i<=36; i++) { pwrlist.push({dbm: i, mw: Math.round(Math.pow(10, (i-30)/10) * 1000)}); }; pwrlist = pwrlist.filter((v,i,a)=>a.findIndex(t=>(t.dbm===v.dbm))===i); for(let p of pwrlist)|g" "$WIRELESS_JS"
-        echo "✅ تم حقن القيم حتى 36 dBm للإصدار الحديث."
-    elif grep -q "for(var i=0;i<pwrlist.length;i++)" "$WIRELESS_JS"; then
-        sed -i "s|for(var i=0;i<pwrlist.length;i++)|for(let j=27; j<=36; j++) { pwrlist.push({dbm: j, mw: Math.round(Math.pow(10, (j-30)/10) * 1000)}); }; pwrlist = pwrlist.filter((v,i,a)=>a.findIndex(t=>(t.dbm===v.dbm))===i); for(var i=0;i<pwrlist.length;i++)|g" "$WIRELESS_JS"
-        echo "✅ تم حقن القيم حتى 36 dBm للإصدار القديم."
-    else
-        echo "⚠️ لم يتم العثور على النمط المناسب لحقن القيم."
+
+    # توسيع قائمة الـ dBm لتشمل القيم من 27 إلى 40
+    if grep -q "for (var i = 0; i < pwrlist.length; i++)" "$WIRELESS_JS"; then
+        sed -i 's|for (var i = 0; i < pwrlist.length; i++)|for (var i = 27; i <= 40; i++) { pwrlist.push({dbm: i, mw: Math.round(Math.pow(10, (i-30)/10) * 1000)}); }; pwrlist = pwrlist.filter((v,i,a)=>a.findIndex(t=>(t.dbm===v.dbm))===i); for (var i = 0; i < pwrlist.length; i++)|g' "$WIRELESS_JS"
+        echo "✅ تمت إضافة قيم dBm بنجاح."
     fi
+
+    # مطابقة وربط القيمة الحالية (Current power) لتتبع القيمة المختارة في الواجهة
+    sed -i 's|radioNet.getTXPower()|uci.get("wireless", "radio0", "txpower") || "36"|g' "$WIRELESS_JS"
+    echo "✅ تم تعديل Status وتوافق الطاقة بنجاح."
+
 else
-    echo "⚠️ لم يتم العثور على ملف wireless.js."
+    echo "⚠️ لم يتم العثور على wireless.js."
 fi
 
 # ==========================================
@@ -124,13 +125,40 @@ EOF
 chmod +x package/base-files/files/etc/uci-defaults/98-disable-router-services
 
 # ==========================================
-# 7. إخفاء خيارات SSH والـ Keys بشكل جذري من واجهة LuCI
+# 7. إخفاء محتوى صفحات إعدادات SSH والـ Keys من الواجهة نهائياً
 # ==========================================
-rm -f feeds/luci/modules/luci-mod-system/luasrc/controller/admin/keys.lua 2>/dev/null || true
-find . -name "keys.lua" -exec rm -f {} \; 2>/dev/null || true
+DROPBEAR_JS="feeds/luci/modules/luci-mod-system/htdocs/luci-static/resources/view/system/dropbear.js"
+if [ -f "$DROPBEAR_JS" ]; then
+    cat << 'EOF' > "$DROPBEAR_JS"
+'use strict';
+'require view';
+'require dom';
+return view.extend({
+    render: function() {
+        return E('div', { 'class': 'container' }, [
+            E('h2', {}, _('SSH Access')),
+            E('p', {}, _('SSH configuration is managed strictly via terminal.'))
+        ]);
+    }
+});
+EOF
+fi
 
-if [ -f "feeds/luci/collections/luci/Makefile" ]; then
-    sed -i 's/luci-theme-bootstrap/luci-theme-argon/g' feeds/luci/collections/luci/Makefile 2>/dev/null || true
+SSHKEYS_JS="feeds/luci/modules/luci-mod-system/htdocs/luci-static/resources/view/system/sshkeys.js"
+if [ -f "$SSHKEYS_JS" ]; then
+    cat << 'EOF' > "$SSHKEYS_JS"
+'use strict';
+'require view';
+'require dom';
+return view.extend({
+    render: function() {
+        return E('div', { 'class': 'container' }, [
+            E('h2', {}, _('SSH-Keys')),
+            E('p', {}, _('SSH keys configuration is hidden.'))
+        ]);
+    }
+});
+EOF
 fi
 
 # ==========================================
@@ -141,10 +169,10 @@ cat << 'EOF' > package/base-files/files/etc/uci-defaults/99-fix-wifi-power
 uci -q batch << EOB
 set wireless.@wifi-device[0].disabled='0'
 set wireless.@wifi-device[1].disabled='0'
-set wireless.@wifi-device[0].country='US'
-set wireless.@wifi-device[1].country='US'
-set wireless.@wifi-device[0].txpower='36'
-set wireless.@wifi-device[1].txpower='36'
+set wireless.@wifi-device[0].country='PA'
+set wireless.@wifi-device[1].country='PA'
+set wireless.@wifi-device[0].txpower='38'
+set wireless.@wifi-device[1].txpower='38'
 commit wireless
 EOB
 wifi reload

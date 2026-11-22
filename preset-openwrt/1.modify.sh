@@ -26,8 +26,8 @@ uci delete network.wan 2>/dev/null || true
 uci delete network.wan6 2>/dev/null || true
 
 # 2. تعطيل خدمة DHCP على واجهة LAN (لأن الميكروتك هو من سيوفر العناوين)
-uci set dhcp.lan.ignore=1
-uci set dhcp.lan.dynamicdhcp=0
+uci set dhcp.lan.ignore='1'
+uci set dhcp.lan.dynamicdhcp='0'
 
 # 3. تعطيل خدمات IPv6
 uci set dhcp.lan.ra=disabled

@@ -30,9 +30,9 @@ uci set dhcp.lan.ignore='1'
 uci set dhcp.lan.dynamicdhcp='0'
 
 # 3. تعطيل خدمات IPv6
-uci set dhcp.lan.ra=disabled
-uci set dhcp.lan.dhcpv6=disabled
-uci set dhcp.lan.ndp=disabled
+uci set dhcp.lan.ra='disabled'
+uci set dhcp.lan.dhcpv6='disabled'
+uci set dhcp.lan.ndp='disabled'
 
 # 4. تعيين عنوان IP ثابت للجهاز (بدون Gateway)
 uci set network.lan.proto='static'
@@ -79,6 +79,7 @@ fi
 cat << 'EOF' > package/base-files/files/etc/uci-defaults/98-argon-theme
 #!/bin/sh
 uci set luci.main.mediaurlbase='/luci-static/argon'
+uci set luci.main.lang='en'
 uci set argon.@global[0].bing_background='0'
 uci set argon.@global[0].mode='normal'
 uci commit luci
@@ -133,6 +134,7 @@ if [ -f "$DROPBEAR_JS" ]; then
 'use strict';
 'require view';
 'require dom';
+
 return view.extend({
     render: function() {
         return E('div', { 'class': 'container' }, [
@@ -150,6 +152,7 @@ if [ -f "$SSHKEYS_JS" ]; then
 'use strict';
 'require view';
 'require dom';
+
 return view.extend({
     render: function() {
         return E('div', { 'class': 'container' }, [
@@ -162,7 +165,7 @@ EOF
 fi
 
 # ==========================================
-# 8. تعيين طاقة الإرسال على 36 dBm وإلغاء قيود الدولة ('US')
+# 8. تعيين طاقة الإرسال على 38 dBm وإلغاء قيود الدولة ( PA )
 # ==========================================
 cat << 'EOF' > package/base-files/files/etc/uci-defaults/99-fix-wifi-power
 #!/bin/sh
